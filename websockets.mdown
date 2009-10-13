@@ -1,0 +1,11 @@
+http://www.jroller.com/tedgoddard/entry/websocket_is_neither_web_nor
+http://www.indicthreads.com/3625/html-5-websocket-cracks-the-http-request-response-barrier/
+http://www.indicthreads.com/1525/building-real-time-web-applications-using-html-5-web-sockets/
+http://www.kaazing.org/confluence/display/Doc/Architecture+Overview#websocket
+http://dev.w3.org/html5/websockets/
+http://javablog.be/java/devoxx-08-html-5-websockets-and-server-sent-events/
+http://groups.google.com/group/chromium-dev/browse_thread/thread/abd466ad477bb4f1?pli=1
+http://www.kaazing.org/confluence/display/KAAZING/What+is+an+HTML+5+WebSocket
+http://cometdaily.com/2008/07/04/html5-websocket/
+
+

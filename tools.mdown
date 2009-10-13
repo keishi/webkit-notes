@@ -1,0 +1,114 @@
+# Using Git With WebKit
+
+[Using Git With WebKit](http://trac.webkit.org/wiki/UsingGitWithWebKit)
+
+## Making Your Changes
+
+The first thing you need to do is obtain a clone of the WebKit repository.
+
+	$ git clone git://git.webkit.org/WebKit.git WebKit  
+	$ cd WebKit
+
+Then you need to create your new branch:
+
+	$ git checkout -b datagrid  
+	Switched to a new branch "datagrid"
+
+Once you've finished making your changes you need to commit them. "commit -a" will automatically notice any modified (but not new) files, add them to the index, and commit, all in one step.
+
+	$ git commit -a -m "Added Datagrid.h"  
+	Created commit 29f8baa: I made rails scale by adding magic beans  
+	 1 files changed, 0 insertions(+), 1 deletions(-)
+
+## Preparing your changes for submission
+
+Now that you've made your changes it's time to get them into a patch. We need to update WebKit and fix any conflicts we had.
+
+	$ git checkout master  
+	Switched to branch "master"  
+	$ git pull  
+	...  
+	$ git checkout datagrid  
+	Switched to branch "datagrid"  
+	$ git rebase master
+
+Once you've fixed any conflicts, you're ready to create a patch:
+
+	$ git diff master > your-patch-file.diff
+
+git format-patch will divide the diff for each commit so you'll have to combine all your commits on a separate branch first.
+
+	$ git format-patch master --stdout > your-patch-file.diff
+
+## Reviewing a Patch
+
+To apply someone's changes you need to first create a branch:
+
+	$ git checkout -b test_datagrid_patch
+
+Then you can apply their patch
+
+	$ git am < their-patch-file.diff
+
+To delete the branch after you're done
+
+	$ git branch -d test_datagrid_patch
+
+## Fix mistakes
+
+To abandon everything since your last commit.
+
+	$ git reset --hard
+
+To reset your current branch and working directory to its state at HEAD^
+
+	$ git reset --hard HEAD^
+
+# WebKit Tools
+
+## bugzilla-tool
+
+A tool for automating dealing with bugzilla, posting patches, committing patches, etc.
+
+	$ bugzilla-tool post-diff 342455
+
+## svn-create-patch
+
+Extended "svn diff" script for WebKit Open Source Project, used to make patches.
+
+Differences from standard "svn diff":
+
+* Uses the real diff, not svn's built-in diff.
+* Always passes "-p" to diff so it will try to include function names.
+* Handles binary files (encoded as a base64 chunk of text).
+* Sorts the diffs alphabetically by text files, then binary files.
+* Handles copied and moved files.
+
+## update-webkit
+
+Update script for WebKit Open Source Project using subversion.
+
+## prepare-Changelog
+
+Perl script to create a ChangeLog entry with names of files and functions from a diff. Works with Git.
+
+## build-webkit
+
+	Usage: build-webkit [options] [options to pass to build system]
+	  --help                            Show this help message
+	  --clean                           Cleanup the build directory
+	  --debug                           Compile in debug mode
+	  --cairo-win32                     Build using Cairo (rather than CoreGraphics) on Windows
+	  --chromium                        Build the Chromium port on Mac/Win/Linux
+	  --gtk                             Build the GTK+ port
+	  --qt                              Build the Qt port
+
+	  --makeargs=<arguments>            Optional Makefile flags
+
+## run-safari
+
+Simplified "run" script for WebKit Open Source Project.
+
+## Layout Test
+
+http://seclab.stanford.edu/websec/cross-testing/cross-browser-security-testing.pdf

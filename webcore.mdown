@@ -1,0 +1,521 @@
+# WebCore
+
+## How to print log output lines?
+
+* LOG()
+* LOG_ERROR()
+* fprintf(stderr, ...)
+
+Source: [[webkit-dev] newbie question](https://lists.webkit.org/pipermail/webkit-dev/2007-November/002752.html)
+
+## RefPtr
+
+[RefPtr and PassRefPtr Basics](http://webkit.org/coding/RefPtr.html)
+
+## Console
+
+Represents window.console object. Belongs to a frame.
+
+## InspectorController < JavaScriptDebugListener
+
+## InspectorFrontend
+
+## ConsoleMessage
+
+## JSInspectedObjectWrapper < JSQuarantinedObjectWrapper
+
+This subclass of JSQuarantinedObjectWrapper is used to wrap objects from the inspected
+page being passed to the Inspector.
+
+(WebCore::JSInspectedObjectWrapper::wrap): Wraps the passed-in object
+if needed and returns the wrapper. If this object has been wrapped
+previously we'll return the old wrapper rather than make a new one.
+
+(WebCore::JSInspectedObjectWrapper::prepareIncomingValue): Ensure that
+any objects passed to the inspected object are either wrappers around
+objects from the inspected page (in which case we unwrap them so that
+the inspected page never sees the wrapper), or wrapped callbacks from
+the Inspector.
+
+allowsGetProperty, allowsSetProperty, allowsDeleteProperty, allowsConstruct, allowsHasInstance, allowsCallAsFunction, allowsGetPropertyNames all return true so that the Inspector can use objects from the
+inspected page however it needs.
+
+## JSInspectorCallbackWrapper < JSQuarantinedObjectWrapper
+
+This subclass of JSQuarantinedObjectWrapper is used to wrap callbacks that the
+Inspector passes to the inspected page (e.g., for event listeners or
+client-side storage callbacks).
+
+say the Inspector is passed an unwrapped Node from the inspected page, like document.body, and then the Inspector's JS calls node.focus(). And say the inspected page has done something like: 
+
+	document.body.focus = function() { caller.doSomething(); }
+
+in this case, "arguments.caller" is part of the Inspector's JS. So now the inspected page has access to the Inspector. And since the Inspector runs with elevated privileges, this is a problem. Quarantining the object solves this by blocking access to "arguments.caller"
+
+When you access InspectorController.inspectedWindow(), you're handed back a quarantined window. All the properties you access from it will be quarantined automatically.
+
+## JSQuarantinedObjectWrapper < JSC::JSObject
+
+JSObject overrides. These each check the appropriate permission before
+allowing the call to proceed. We wrap all outgoing values using
+m_wrapOutgoingValue, and we prepare all incoming values with the
+virtual prepareIncomingValue function. If an exception is raised when
+calling the underlying object, we transfer the exception in wrapped
+form to the passed-in ExecState.
+
+These virtual methods let subclasses define the allowed operations on
+the wrapped object. By default all operations are disabled.
+
+* (WebCore::JSQuarantinedObjectWrapper::allowsGetProperty):
+* (WebCore::JSQuarantinedObjectWrapper::allowsSetProperty):
+* (WebCore::JSQuarantinedObjectWrapper::allowsDeleteProperty):
+* (WebCore::JSQuarantinedObjectWrapper::allowsConstruct):
+* (WebCore::JSQuarantinedObjectWrapper::allowsHasInstance):
+* (WebCore::JSQuarantinedObjectWrapper::allowsCallAsFunction):
+* (WebCore::JSQuarantinedObjectWrapper::allowsGetPropertyNames):
+
+## ScriptObject
+
+WebCore/bindings/js/Script* is the abstraction layer for JSC and V8.
+
+## ResourceHandleClient
+
+Virtual class for receiving callbacks from ResourceHandle.
+
+## ResourceLoader < ResourceHandleClient
+
+## FrameLoader
+
+Controls the process of loading web pages into a frame. Contains all the loading-related functions and data instead of having them all on Frame itself. There’s one of these for each frame.
+
+## DocumentLoader
+
+Controls the process of loading one particular web page into a frame. When a new page is loaded, the frame loader creates a new document loader and then later destroys the old one.
+
+## DocLoader
+
+The DocLoader manages the loading of scripts/images/stylesheets for a single document. Part of the caching machinery. Manages the cached loading for a particular document. May be merged with DocumentLoader at some point in the future, or perhaps renamed.
+
+## MainResourceLoader < ResourceLoader
+
+FrameLoader and DocumentLoader use ResourceLoader objects to load individual resources. The main resource is the HTML file (or SVG file or whatever). The ResourceLoader for the main resource is a MainResourceLoader.
+
+## SubResourceLoader < ResourceLoader
+
+The ResourceLoader objects for subresources such as images, scripts, and CSS style sheets are SubresourceLoader objects.
+
+## TextResourceDecoder
+
+Decodes the bytes into Unicode String. Also contains character encoding auto detection logic. 
+
+## HTMLTokenizer
+
+Divides the source string into tokens and passes it to HTMLParser. Implemented as push style because pieces of the source gets fed into HTMLTokenizer::write() as they arrive.
+
+## Token
+
+	struct Token {
+	    ...
+	    RefPtr<NamedMappedAttrMap> attrs;
+	    RefPtr<StringImpl> text;
+	    AtomicString tagName;
+	    bool beginTag; // true if begin tag. true when textAtom
+	    bool selfClosingTag; // true if self closing tag.
+	    bool brokenXMLStyle; 
+		// This is a quirk (with a long sad history).  We have to do this
+		// since widgets do <script src="foo.js"/> and expect the tag to close.
+	    OwnPtr<Vector<UChar> > m_sourceInfo; // Mystery. Used by HTMLViewSourceDocument
+	};
+
+![HTML Tokens](htmltokens.png)
+
+## HTMLParser
+
+Receives the Tokens from HTMLTokenizer and constructs a DOM tree. Algorithm uses stack.
+
+![How HTMLParser works](htmlparsing.png)
+
+## HTMLViewSourceDocument < HTMLDocument
+
+The document when frame has "viewsource" set to "true". Gets tokens from HTMLTokenizer and generates a syntax highlighted document.
+
+## Document
+
+The root of the tree is always the document. There are three document classes, Document, HTMLDocument and SVGDocument. The first is used for all XML documents other than SVG documents. The second applies only to HTML documents and inherits from Document. The third applies to SVG documents and also inherits from Document.
+
+## Element < ContainerNode
+
+All of the tags that occur in HTML or XML source turn into elements. From a rendering perspective, an element is a node with a tag name that can be used to cast to a specific subclass that can be queried for data that the renderer needs.
+
+## ContainerNode < Node
+
+Node that has childNodes.
+
+## Node < EventTarget, TreeShared
+
+A Web page is parsed into a tree of nodes called the Document Object Model (DOM for short). The base class for all nodes in the tree is Node. This class implements nodes, which can have a parent but no children
+
+## Text < CharacterData
+
+Raw text that occurs in between elements gets turned into text nodes. Text nodes store this raw text, and the render tree can query the node for its character data.
+
+## CharacterData < Node
+
+The CharacterData object is not really a DOM object as such, but rather extends the Node object with various properties and methods for manipulating text. For CDATASection, Comment and Text Nodes.
+
+## RenderObject < CachedResourceClient
+
+At the heart of rendering is the render tree. The render tree is very similar to the DOM in that it is a tree of objects, where each object can correspond to the document, elements or text nodes. The render tree can also contain additional objects that have no corresponding DOM node.
+
+The base class of all render tree nodes is RenderObject.
+
+The RenderObject for a DOM node can be obtained using the renderer() method on Node.
+
+* [[webkit-dev] nodeAtPoint is very confusing](https://lists.webkit.org/pipermail/webkit-dev/2009-April/007325.html)
+
+
+## RenderStyle
+
+Every single CSS property that WebKit supports can be queried via this object. RenderStyles are reference counted objects. If a DOM node creates a renderer, then it connects the style information to that renderer using the setStyle method on the renderer.
+
+RenderObject::style() to access.
+
+## RenderBox < RenderBoxModelObject
+
+One of the principal workhorse subclasses of RenderObject is RenderBox. This subclass represents objects that obey the CSS box model. These include any objects that have borders, padding, margins, width and height. Right now some objects that do not follow the CSS box model (e.g., SVG objects) still subclass from RenderBox. This is actually a mistake that will be fixed in the future through refactoring of the render tree.
+
+![CSS Box Model](http://www.w3.org/TR/CSS21/images/boxdim.png)
+
+This diagram from the CSS2.1 spec illustrates the parts of a CSS box. The following methods can be used to obtain the border/margin/padding widths. The RenderStyle should not be used unless the intent is to look at the original raw style information, since what is actually computed for the RenderObject could be very different (especially for tables, which can override cell padding and have collapsed borders between cells).
+
+When a box has a horizontal or vertical scrollbar, it is placed in between the border and the padding. A scrollbar’s size is included in the client width and client height. Scrollbars are not part of the content box. The size of the scrollable area and the current scroll position can both be obtained from the RenderObject.
+
+## RenderBoxModelObject < RenderObject
+
+## RenderFlow
+
+Removed with Changeset 40378. Super class of RenderBlock and RenderInline.
+RenderBlock
+
+A block flow is a box designed either to contain lines (e.g., a paragraph) or to contain other blocks that it stacks vertically. Example block flow elements in HTML are p and div.
+RenderInline
+
+An inline flow is an object that is designed to be part of a line. Example inline flow elements in HTML are a, b, i and span.
+
+## RenderReplaced < RenderBox
+
+In addition to block and inline flows, there is another kind of element that can act as a block or inline: the replaced element. A replaced element is an element whose rendering is unspecified by CSS. How the contents of the object render is left up to the element itself. Examples of replaced elements are images, form controls, iframes, plugins and applets.
+
+A replaced element can also be either block-level or inline-level. When a replaced element acts as a block, it will get stacked vertically as though it represents its own paragraph. When a replaced element acts as an inline, it will be part of a line inside a paragraph. Replaced elements are inline by default.
+
+Form controls are actually a strange special case. They are still replaced elements, but because they are implemented by the engine, controls actually ultimately subclass from RenderBlock. As a result, the concept of being replaced can’t really be confined to a single common subclass, and is therefore represented as a bit on RenderObject instead. The isReplaced method can be used to ask if an object is a replaced element.
+
+    bool isReplaced() const
+
+Images, plugins, frames and applets all inherit from a common subclass that implements replaced element behavior. This class is RenderReplaced.
+
+## RenderTable < RenderBlock
+
+## RenderText < RenderObject
+
+Raw text is represented using the RenderText class. Text is always considered inline by WebCore, since it is always placed on lines.
+ScriptExecutionContext
+
+Document and WorkerContext are subclasses of ScriptExecutionContext.
+Protected Objects
+
+Protected objects are objects that have no direct references from the stack or the JavaScript heap, but must not be destroyed by the garbage collector. Typically, they are  objects that are referenced by non-GC heap-allocated storage, like the DOM. For example, some kinds of event listeners are protected from garbage collection.
+
+We call protected objects "protected" because, unlike normal GC memory, they must be explicitly reference counted in order to protect them from premature deallocation.
+
+## CSSStyleDeclaration < StyleBase
+
+## StyleBase
+
+Base class for most CSS DOM objects.
+
+## CSSParser
+
+Sometimes CSSParser needs to parse only a part of a CSS. For example
+
+	// parse just the declarations
+	document.body.style.cssText = 'background: red; color: blue';
+	// parse just the value
+	document.body.style.color = "red";
+	// parse just the media query
+	linkElement.media.appendMedium('print and (min-device-width: 800px)');
+
+To parse entire CSS files and these small snippets with one YACC parser, CSSParser uses these special rules.
+
+* @-webkit-rule
+* @-webkit-value
+* @-webkit-decls
+* @-webkit-mediaquery
+* etc.
+
+Here is how it does that.
+
+	bool CSSParser::parseValue(CSSMutableStyleDeclaration* declaration, int id, const String& string, bool important)
+	{
+	    ...
+	    setupParser("@-webkit-value{", string, "} ");
+		...
+	    cssyyparse(this);
+	    ...
+	    return ok;
+	}
+
+## ContextMenuController
+
+Creates the context menu and adds the proper menu items.
+
+## CSSProperty
+
+## CSSPropertyLonghand
+
+## CSSSelector
+
+this class represents a selector for a StyleRule
+
+## CSSSelectorList
+
+## CSSStyleRule < CSSRule
+
+## CSSRule < StyleBase
+
+	enum CSSRuleType {
+        UNKNOWN_RULE,
+        STYLE_RULE,
+        CHARSET_RULE,
+        IMPORT_RULE,
+        MEDIA_RULE,
+        FONT_FACE_RULE,
+        PAGE_RULE,
+        VARIABLES_RULE,
+        WEBKIT_KEYFRAMES_RULE,
+        WEBKIT_KEYFRAME_RULE
+    };
+
+## CSSValue
+
+## CSSValueList < CSSValue
+
+## StyleList < StyleBase
+
+a style class which has a list of children (StyleSheets for example)
+
+## StyleSheet < StyleList
+
+## StyleSheetList
+
+## String
+
+Data is stored in StringImpl.
+
+## StringImpl
+
+	class StringImpl : public RefCounted<StringImpl> {
+		...
+	private:
+		...
+		enum StringImplFlags {
+	        HasTerminatingNullCharacter,
+	        InTable,
+	    };
+
+	    unsigned m_length;
+	    const UChar* m_data;
+	    mutable unsigned m_hash;
+	    PtrAndFlags<SharedUChar, StringImplFlags> m_sharedBufferAndFlags;
+
+	    // In some cases, we allocate the StringImpl struct and its data
+	    // within a single heap buffer. In this case, the m_data pointer
+	    // is an "internal buffer", and does not need to be deallocated.
+	    bool m_bufferIsInternal;
+	}
+
+## CString
+
+A container for a null-terminated char array supporting [copy-on-write](http://en.wikipedia.org/wiki/Copy-on-write) assignment.  The contained char array may be null.
+
+## What are .idl files?
+
+They're using to generate bindings, for JavaScript, Objective-C, and
+COM, so programs using WebKit can get at the DOM from those languages. 
+The actual DOM implementation is in C++ and includes many things that
+are not intended to be public.
+
+The JavaScript bindings are the way the DOM is exposed to scripts in
+web pages, while the Objective-C bindings are the way the DOM is
+exposed to programs on Mac OS X using the WebKit framework.
+
+Using IDL files instead of hand written bindings allows us to
+easily change details of the binding mechanism without modifying
+hundreds of files. It's been a great boon for folks working on the
+WebKit project.
+
+[More about IDL files](https://trac.webkit.org/wiki/IdlAttributes)
+
+## What are .in files?
+
+The .in files are broken down into two categories:
+
+1. Those in the css directory are passed to gperf by way of css/makeprop.pl to generate hash tables for mapping character strings representing CSS properties and values into an identifier, and vice versa.
+2. The remainder are passed to dom/make_names.pl in order to generate constants representing tag names and attributes for HTML, SVG, etc.
+
+The reason these files are generated is similar to why we use IDLs to simplify the generation of bindings-related code: it makes working with the code simpler.  If you take a look at the generated source files, you'll notice that there is a lot of duplication and complicated algorithms in the generated code.  Maintaining it by hand would be a lot more painful than having a script maintain it for us.   (CSSValueKeywords.c is a good example of the generated code for case 1, HTMLNames.cpp a good example of case 2.  These typically get generated into your build directory.  For instance, on the Mac they are created inside WebKitBuild/Debug/DerivedSources/WebCore/.)
+
+- [Hashtables, Part 1](http://webkit.org/blog/6/hashtables-part-1/)
+- [Hashtables, Part 2](http://webkit.org/blog/6/hashtables-part-2/)
+- [.className vs. .style](http://webkit.org/blog/13/classname-vs-style/)
+- [Buttons](http://webkit.org/blog/28/buttons/)
+- [High DPI Web Sites](http://webkit.org/blog/55/high-dpi-web-sites/)
+- [High DPI (Part 2)](http://webkit.org/blog/56/high-dpi-part-2/)
+- [CSS Units](http://webkit.org/blog/57/css-units/)
+- [The FOUC Problem](http://webkit.org/blog/66/the-fouc-problem/)
+- [Strange Medium](http://webkit.org/blog/67/strange-medium/)
+- [Understanding HTML, XML and XHTML](http://webkit.org/blog/68/understanding-html-xml-and-xhtml/)
+- [Background Music](http://webkit.org/blog/96/background-music/)
+- [Versioning, Compatibility and Standards](http://webkit.org/blog/155/versioning-compatibility-and-standards/)
+- [Optimizing Page Loading in the Web Browser](http://webkit.org/blog/166/optimizing-page-loading-in-web-browser/)
+
+## Implementing CSS
+
+[Implementing CSS (Part 1)](http://weblogs.mozillazine.org/hyatt/archives/2005_05.html) by Dave Hyatt, May 2005
+
+One of the most interesting problems (to me at least) in browser layout engines is how to implement a style system that can determine the style information for elements on a page efficiently. I worked on this extensively in the Gecko layout engine during my time at AOL and I've also done a lot of work on it for WebCore at Apple. My ideal implementation would actually be a hybrid of the two systems, since some of the optimizations I've done exist only in one engine or the other.
+
+When dealing with style information like font size or text color, you have both the concept of back end information, what was specified in the style rule, and the concept of front end information, the computed result that you'll actually use when rendering. The interesting problem is how to compute this front end information for a given element efficiently.
+
+Back end information can be specified in two different ways. It can either be specified using CSS syntax, whether in a stylesheet or in an inline style attribute on the element itself, or it is implicitly present because another attribute on the element specified presentational information. An example of such an attribute would be the color attribute on the font tag. Both WebCore and Gecko use the term mapped attribute to describe an attribute whose value (or even mere presence) maps to some implicit style declaration.
+
+A rule in CSS consists of two pieces. There is the selector, that bit of information that says under what conditions the rule should match a given element, and there is the declaration, a list of property/value pairs that should be applied to the element should the selector be matched.
+
+All back end information can ultimately be thought of as supplying a declaration. A normal rule in a stylesheet that is matched has the declaration specified as part of the rule. An inline style attribute on an element has no selector and is simply a declaration that always applies to that element. Similarly each individual mapped attribute (like the color and face attributes on the font tag) can be thought of as supplying a declaration as well.
+
+Therefore the process of computing the style information for an element can be broken down into two phases. The first phase is to determine what set of declarations apply to an element. Once that back end information has been determined, the second phase is to take that back end information and quickly determine the information that should be used when rendering.
+
+WebCore (in upcoming Safari releases) has a really cool optimization that I came up with to avoid even having to compute the set of declarations that apply to an element. This optimization in practice results in not even having to match style for about 60% of the elements on your page.
+
+The idea behind the optimization is to recognize when two elements in a page are going to have the same style through DOM (and other state) inspection and to simply share the front end style information between those two elements whenever possible.
+
+There are a number of conditions that must be met in order for this sharing to be possible:
+
+1. The elements must be in the same mouse state (e.g., one can't be in :hover while the other isn't)
+2. Neither element should have an id
+3. The tag names should match
+4. The class attributes should match
+5. The set of mapped attributes must be identical
+6. The link states must match
+7. The focus states must match
+8. Neither element should be affected by attribute selectors, where affected is defined as having any selector match that uses an attribute selector in any position within the selector at all
+9. There must be no inline style attribute on the elements
+10. There must be no sibling selectors in use at all. WebCore simply throws a global switch when any sibling selector is encountered and disables style sharing for the entire document when they are present. This includes the + selector and selectors like :first-child and :last-child.
+
+The algorithm to locate a shared style then goes something like this. You walk through your previous siblings and for each one see if the above 10 conditions are met. If you find a match, then simply share your style information with the other element. Such a system obviously assumes a reference counting model for your front end style information.
+
+Where this optimization kicks into high gear, however, is that it doesn't have to give up if no siblings can be located. Because the detection of identical style contexts is essentially O(1), nothing more than a straight pointer comparison, you can easily look for cousins of your element and still share style with those elements.
+
+The way this works is that if you can't locate a sibling, you can go up to a parent element and attempt to find a sibling or cousin of the parent element that has the same style pointer. If you find such an element, you can then drill back down into its children and attempt to find a match.
+
+This means that for HTML like the following:
+
+	<table>
+	<tr class='row'>
+	<td class='cell' width=300 nowrap>Cell One</td>
+	</tr>
+	<tr class='row'>
+	<td class='cell' width=300 nowrap>Cell Two</td>
+	</tr>
+
+In the above example, not only do the two rows share the same style information, but the two cells do as well. This optimization works extremely well for both old-school HTML (in which many deprecated presentational tags are used) and newer HTML (in which class attributes might figure more prominently).
+
+Once the engine determines that a style can't be shared, i.e., that no pre-existing front end style pointer is available, then it's time to figure out the set of declarations that match a given element. It is obvious that for inline style attributes and mapped attributes that you can find the corresponding declaration quickly. The inline style declaration can be owned by the element, and the mapped attributes can be kept in a document-level hash. WebCore has a bit of an edge over Gecko here in that it treats each individual mapped attribute on an element as a separate declaration, whereas Gecko hashes all of the mapped attributes on an element as a single "rule." This means that Gecko will not be able to share the mapped attribute declaration for the following two elements:
+
+	<img width=300 border=0>
+	<img width=500 border=0>
+
+WebCore creates three unique declarations and hashes them, one for a width of 300, one for a width of 500, and one for a border of 0. Gecko creates two different "rules," one for (width=300,border=0) and another for (width=500,border=0). As you can see in such a system, you will frequently not be able to treat the identical border attributes as the same.
+
+Aside from this difference in mapped attribute handling, the two engines employ a similar optimization for quickly determining matching stylesheet rules called rule filtering. All rules that are potentially matchable by any element (i.e., that have the correct media type) are hashed based on the contents of the rightmost simple selector in the rule.
+
+A selector in CSS can be either simple (meaning that all of the contents of that selector apply only to a single element) or compound (meaning that you may examine multiple elements like parents or siblings of that element). A compound selector is essentially a chain of simple selectors, so the following rule:
+
+	tr > td { color: blue }
+
+has two simple selectors, tr and td. The rightmost simple selector in the rule is the one that we will use for the rule filtering optimization.
+
+The rightmost simple selector falls into four categories.
+
+1. The selector uses an ID. (Example: #foo)
+2. The selector doesn't have an ID but uses a class. (Example: .foo)
+3. The selector has no class or ID but specifies a tag name. (Example: div)
+4. The selector specifies none of these things. (Example: *[disabled])
+
+The rule is placed into one of four hashtables depending on which category it falls into. The idea behind these categorizations is to always filter out more specific information first. For example, if an element has a specific ID, then obviously any rules whose rightmost selector uses a different ID cannot match. Technically the last category can just be a list and not a hashtable, since those rules must always be examined by all elements.
+
+Each hashtable, therefore, consists of a mapping from a given atomic string to a set of rules that match. The class attribute is exceptional in that you must put the rule into the hashtable multiple times if multiple class attributes are used.
+
+When determining the set of rules that match a given element, you only examine rules that correspond to the correct hash entry based off your ID, classes and tag name. This optimization basically eliminates 95+% of the rules up front so that they need not even be considered during the matching process.
+
+Each rule is then examined in detail, with all selectors being checked, to determine if it is a match, and the set of matches is collected. The set of matches can then be sorted by priority and specificity such that all the declarations are in the proper application order.
+
+This brings us to the final phase of the style computation, which is taking the set of matches and quickly computing the appropriate front end style information. It is here that Gecko really shines. What I implemented in Gecko was a data structure called the rule tree for efficient storing of cached style information that can be shared *even when* two elements are not necessarily the same.
+
+The idea behind the rule tree is as follows. You can think of the universe of possible rules in your document as an alphabet and the set of rules that are matched by an element as a given input word. For example, imagine that you had 26 rules in a stylesheet and you labeled them A-Z. One element might match three rules in the sheet, thus forming the input word "C-A-T" or another might form the input word "D-O-G."
+
+There are several important observations one can make once you formulate the problem this way. The first is that words that are prefixes of a larger word will end up applying the same set of rules. All additional letters in the word do is result in the application of more declarations. Thus the rule tree is effectively a lexicographic tree of nodes, with each node in a tree being created lazily as you walk the tree spelling out a given word.
+
+This system allows you to cache style information at each node in the tree. This means that once you've looked up the word "C-A-T-E-R-W-A-U-L", and cached information at all of the nodes, then looking up the word "C-A-T" becomes more efficient.
+
+In order to make the caching efficient, properties can be grouped into categories, with the primary criterion for categorization being whether the property inherits by default. It's also important to group properties together that would logically be specified together, so that when a fault occurs and you have to make a copy of a given struct, you do so knowing that the other values in the struct were probably going to be different anyway.
+
+Once you have the properties grouped into categories like the border struct or the background struct, then you can either store these structs in the rule tree or as part of a style tree that more or less matches the structure of the document. Inheritance has to apply down the style tree and tends to force a fault, whereas non-inherited properties can usually be cached in the rule tree for easy access.
+
+WebCore doesn't contain a rule tree, but it is smart enough to refcount the structs and share them as long as no properties have been set in the struct. In practice this works pretty well but is not as ideal as the rule tree solution.
+
+
+## XSSAuditor
+
+The XSSAuditor class is used to prevent type 1 cross-site scripting
+vulnerabilites (also known as reflected vulnerabilities).
+
+More specifically, the XSSAuditor class decides whether the execution of
+a script is to be allowed or denied based on the content of any
+user-submitted data, including:
+
+* the query string of the URL.
+* the HTTP-POST data.
+
+If the source code of a script resembles any user-submitted data then it
+is denied execution.
+
+When you instantiate the XSSAuditor you must specify the {@link Frame}
+of the page that you wish to audit.
+
+### Bindings
+
+An XSSAuditor is instantiated within the contructor of a
+ScriptController object and passed the Frame the script originated. The
+ScriptController calls back to the XSSAuditor to determine whether a
+JavaScript script is safe to execute before executing it. The following
+methods call into XSSAuditor:
+
+* ScriptController::evaluate - used to evaluate JavaScript scripts.
+* ScriptController::createInlineEventListener - used to create JavaScript event handlers.
+* HTMLTokenizer::scriptHandler - used to load external JavaScript scripts.
+
+
+## rXSS
+
+@UNCONFIRMED
+
+For example reflected XSS occurs when a site uses the request information directly to create the HTML.
+
+	<link rel="alternate" type="application/rss+xml" title="RSS2.0" href="http://example.com/rss?sort=%s" />
+
+We can inject a script tag.
+
+	<link rel="alternate" type="application/rss+xml" title="RSS2.0" href="http://example.com/rss?sort="><script>alert("dangerous code");</script><meta id="" />
+ 
+
