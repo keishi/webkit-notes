@@ -112,3 +112,15 @@ Simplified "run" script for WebKit Open Source Project.
 ## Layout Test
 
 http://seclab.stanford.edu/websec/cross-testing/cross-browser-security-testing.pdf
+
+# GDB and WebKit
+
+[GDB and WebKit](http://trac.webkit.org/wiki/GDB)
+
+GDB 7 introduced Python scripting of GDB. WebKitTools/gdb/webkit.py extends GDB with WebKit-specific knowledge. See the top of the file for info on how to add this to your GDB.
+
+That script also adds a GDB command useful for printing WebKit Node trees.
+
+	printpathtoroot variable_name
+
+will print the tree of nodes above a WebCore::Node.

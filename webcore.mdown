@@ -518,4 +518,58 @@ We can inject a script tag.
 
 	<link rel="alternate" type="application/rss+xml" title="RSS2.0" href="http://example.com/rss?sort="><script>alert("dangerous code");</script><meta id="" />
  
+## Major Objects in WebCore
 
+[Major Objects in WebCore](http://webkit.org/coding/major-objects.html)
+
+WebCore uses a number of objects to represent a web page in memory. This document describes the major objects and the relation between them. In some cases, the connection between these objects can be broken, resulting in null pointers. When traversing these pointers, code must be careful to consider the "detached" case and gracefully handle null pointers.
+
+	 +---------+
+	 | Chrome  |
+	 +----+----+
+	      |
+	  +---+---+     +----------+
+	  | Page  +---->| Settings |
+	  +---+---+     +----------+
+	      |
+	      +-------------------------- ... other Frame objects
+	      |
+	  +---+---+   +-------------+                 +-------------------+
+	  | Frame +---+ FrameLoader +                 | JSDOMWindowShell  |
+	  +---+---+   +-------------+                 +---------+---------+
+	     / \                                                |
+	    /   \      /\  Re-used after navigation   /\        |
+	.../....|...............................................|..........
+	  /     |      \/  Replaced after navigation  \/        |
+	 /      |                                               |
+	/<------|<-- Ptrs to Frame are null after navigation[1] |
+	|       |                                               |
+	| +-----+-----+         +-------------+                 |
+	| | DOMWindow |<--impl--+ JSDOMWindow |<------window----+
+	| +-----+-----+         +-------------+
+	|       |
+	|       |<-- Can be null for Documents created by XMLHttpRequest
+	|       |
+	| +-----+-----+         +-------------+
+	+-+ Document  |<--impl--+ JSDocument  |
+	  +-----+-----+         +-------------+
+	        |
+	        |<-- Can be null for DocumentType objects
+	        |
+	    +---+---+           +--------+
+	    | Node  |<---impl---| JSNode |
+	    +-------+           +--------+
+
+[1] After navigating to a new page, the old DOMWindow and old Document point to a null Frame, and the Frame points to a new DOMWindow and a new Document.
+
+## A guide to Assertion macros in WebKit
+
+[A guide to Assertion macros in WebKit](http://webkit.org/coding/assertion-guidelines.html)
+
+## How a DOM Element is Attached
+
+The implementation of Node::attach() is just a recursive depth-first traversal. However, Element::attach() does a bit more, also creating a renderer (if necessary) and resolving style for the element.
+
+This diagram illustrates how it happens, showing relationships between the objects involved.
+
+![How a DOM Element is Attached](dom-element-attach-large.png)

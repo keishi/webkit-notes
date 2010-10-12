@@ -1,0 +1,3 @@
+## &lt;a ping&gt;
+
+Sends a ping when user clicks the link. Can be used instead of redirect to track the user.
