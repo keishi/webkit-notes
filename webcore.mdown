@@ -1,16 +1,10 @@
-# WebCore
-
-## How to print log output lines?
-
-* LOG()
-* LOG_ERROR()
-* fprintf(stderr, ...)
-
-Source: [[webkit-dev] newbie question](https://lists.webkit.org/pipermail/webkit-dev/2007-November/002752.html)
+# WebCore Class Descriptions
 
 ## RefPtr
 
 [RefPtr and PassRefPtr Basics](http://webkit.org/coding/RefPtr.html)
+
+PassRefPtr is used to reduce number of ref counting incrementing.
 
 ## Console
 
@@ -300,6 +294,10 @@ this class represents a selector for a StyleRule
 
 ## CSSValueList < CSSValue
 
+## CSSStyleSelector
+
+Not a selector in CSS. More like a database index to lookup styles.
+
 ## StyleList < StyleBase
 
 a style class which has a list of children (StyleSheets for example)
@@ -337,6 +335,10 @@ Data is stored in StringImpl.
 ## CString
 
 A container for a null-terminated char array supporting [copy-on-write](http://en.wikipedia.org/wiki/Copy-on-write) assignment.  The contained char array may be null.
+
+## -webkit-appearance
+
+The -webkit-appearance CSS property is used in WebKit to display an element using a platform-native styling based on the operating system's theme.
 
 ## What are .idl files?
 
@@ -562,6 +564,14 @@ WebCore uses a number of objects to represent a web page in memory. This documen
 
 [1] After navigating to a new page, the old DOMWindow and old Document point to a null Frame, and the Frame points to a new DOMWindow and a new Document.
 
+## How to print log output lines?
+
+* LOG()
+* LOG_ERROR()
+* fprintf(stderr, ...)
+
+Source: [[webkit-dev] newbie question](https://lists.webkit.org/pipermail/webkit-dev/2007-November/002752.html)
+
 ## A guide to Assertion macros in WebKit
 
 [A guide to Assertion macros in WebKit](http://webkit.org/coding/assertion-guidelines.html)
@@ -573,3 +583,11 @@ The implementation of Node::attach() is just a recursive depth-first traversal. 
 This diagram illustrates how it happens, showing relationships between the objects involved.
 
 ![How a DOM Element is Attached](dom-element-attach-large.png)
+
+# Misc.
+
+## Render path for &lt;select&gt;
+
+[Re: [webkit-dev] Render path for &lt;select&gt; form controls; layout path for buttons](http://www.mail-archive.com/webkit-dev@lists.webkit.org/msg02844.html)
+
+(RenderMenuList + PopupMenu) or RenderListBox are the renderers for &lt;select&gt;

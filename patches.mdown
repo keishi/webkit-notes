@@ -1,0 +1,48 @@
+## Bug 29358 - [HTML5][Forms] &lt;input type=color&gt; UI
+
+[Bug 29358 - [HTML5][Forms] &lt;input type=color&gt; UI](https://bugs.webkit.org/show_bug.cgi?id=29358)
+
+1. Define new value for -webkit-appearance. See CSSStyleSelector::SelectorChecker::checkOneSelector()
+2. Implement the appearance (rendering/RenderTheme*)
+3. Assign the appearance for input[type=color] (css/html.css)
+4. Implement UI behavior
+	- Add a new function to page/Chrome and page/ChromeClient to open a color picker (See runOpenPanel()
+	- Implement it for various platforms
+	- Add a click handling to html/HTMLInputElement.cpp defaultEventHandler()
+
+### Behaviour
+
+**list** attribbute - Identifies a list of pre-defined options to suggest to the user.
+
+### Steps Overview
+
+1. Define new value for -webkit-appearance, "color-button". 
+
+### Stack trace
+
+1. [WebCore::paintStepper](http://trac.webkit.org/browser/trunk/WebCore/platform/mac/ThemeMac.mm?rev=68459#L502)
+2. [WebCore::ThemeMac::paint](http://trac.webkit.org/browser/trunk/WebCore/platform/mac/ThemeMac.mm?rev=68459#L731)
+3. [WebCore::RenderTheme::paint](http://trac.webkit.org/browser/trunk/WebCore/rendering/RenderTheme.cpp?rev=66577#L270)
+
+### Steps
+
+### Part 1
+
+1. Add "color-button" to CSSValueKeywords.in. This generates CSSValueColorButton in CSSValueKeywords.h.
+2. Add INPUT\_COLOR_BUTTON PseudoId to RenderStyleConstants.h. This will be used for the render tree(UNCONFIRMED).
+3. Add "PseudoInputColorButton" PseudoType to CSSSelector.h. 
+4. Add case in CSSSelector::pseudoId for PseudoInputColorButton.
+5. Map "-webkit-input-color-button" to "PseudoInputColorButton" in CSSSelector.cpp. Declare "inputColorButton" that contains "-webkit-input-color-button" string. Map using nameToPseudoType->set.
+6. "-webkit-input-color-button" is a pseudo element with no single colon compatibility mode. Add line to CSSSelector::extractPseudoType() in CSSSelector.cpp.
+7. Set appearance for input[type="color"]::-webkit-input-color-button in html.css.
+8. Add "ColorButtonPart" to "enum ControlPart" in ThemeTypes.h.
+9. Add case in CSSPrimitiveValue constructor. I don't know when this is used.
+10. Add cases for ColorButtonPart in RenderTheme.cpp. Add virtual methods RenderTheme::adjustColorButtonStyle and RenderTheme::paintColorButton.
+11. Add case for painting in ThemeMac::paint.
+
+### Part 2
+
+1. Add virtual InputElement::isColorButton in InputElement.h.
+2. Implement HTMLInputElement::isColorButton in HTMLInputElement.cpp. HTMLInputElement inherits InputElement.
+3. Add paintColorWell in ThemeMac.mm. Size is free so nothing for ThemeMac::controlSize. No inflation so nothing for ThemeMac::inflateControlPaintRect.
+4. 
