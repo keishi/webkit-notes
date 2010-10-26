@@ -124,3 +124,7 @@ That script also adds a GDB command useful for printing WebKit Node trees.
 	printpathtoroot variable_name
 
 will print the tree of nodes above a WebCore::Node.
+
+# EWS bot
+
+Early Warning System
