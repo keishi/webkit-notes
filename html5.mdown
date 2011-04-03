@@ -1,3 +1,10 @@
 ## &lt;a ping&gt;
 
 Sends a ping when user clicks the link. Can be used instead of redirect to track the user.
+
+## HTML5 Form Features Todo list
+
+1. [Implement value sanitization algorithms](https://bugs.webkit.org/show_bug.cgi?id=37024)
+2. [fix up input-value](https://bugs.webkit.org/show_bug.cgi?id=29235)
+3. [Support snapping, ticks for <input type="range">](https://bugs.webkit.org/show_bug.cgi?id=24703)
+
