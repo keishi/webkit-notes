@@ -336,6 +336,74 @@ Data is stored in StringImpl.
 
 A container for a null-terminated char array supporting [copy-on-write](http://en.wikipedia.org/wiki/Copy-on-write) assignment.  The contained char array may be null.
 
+## InputType
+
+An InputType object represents the type-specific part of an HTMLInputElement.
+Do not expose instances of InputType and classes derived from it to classes
+other than HTMLInputElement.
+
+## RangeInputType < InputType
+
+(WebCore::RangeInputType::createRenderer): Returns a new RenderSlider.
+(WebCore::RangeInputType::createShadowSubtree): Creates SliderThumbElement and sets it as shadow root.
+
+## RenderSlider < RenderBlock
+
+- "slider-horizontal"      -> SliderHorizontalPart
+- "slider-vertical"        -> SliderVerticalPart
+- "sliderthumb-horizontal" -> SliderThumbHorizontalPart
+- "sliderthumb-vertical"   -> SliderThumbVerticalPart
+
+## SliderThumbElement < HTMLDivElement
+
+(WebCore::SliderThumbElement::shadowPseudoId): Returns "-webkit-slider-thumb"
+(WebCore::SliderThumbElement::createRenderer): Returns a new RenderSliderThumb.
+
+## RenderSliderThumb < RenderBlock
+
+(WebCore::RenderSliderThumb::layout): Set RenderStyle appearance based on the appearance of the parent
+
+## RenderTheme
+
+(WebCore::RenderTheme::adjustStyle): These will be overridden in RenderTheme* classes.
+(WebCore::RenderTheme::paint):
+(WebCore::RenderTheme::paintBorderOnly):
+(WebCore::RenderTheme::paintDecorations):
+
+## RenderTheme* Classes
+
+RenderTheme*** classes in WebCore/rendering are responsible for the look of controls. RenderThemeSafari and RenderThemeMac do the Aqua look. RenderThemeWin does a native Windows look.
+
+## RenderThemeMac
+
+In RenderThemeMac, we use the low-level NSCell API to draw the backgrounds and borders of form controls, but don't create real widgets.
+
+## QualifiedName
+
+A smart hashed class that hold a prefix, a 
+namespace URI and a localName all as atomic strings.
+
+## ShadowRoot < DocumentFragment
+
+Added to support multiple nodes at the top level of a shadow. [Changeset 83256](http://trac.webkit.org/changeset/83256)
+
+## 文字列クラスの違い
+
+### StringImpl
+ごく普通の mutable UTF-16 文字列。 0-terminate されない。
+### String
+StringImpl をラップしたもの。StringImpl を持たない null の状態がある。通常はこれを使う。
+### CString
+0-terminated char string.  CString::data() returns a 0-terminated buffer.
+### AtomicStringImpl
+StringImpl と同じ
+### AtomicString
+Inmutable で、Java でいう intern 化された文字列。同じ内容なら内部で持つ AtomicStringImpl が共有されるので比較が速い。
+### UString
+JavaScriptCore 用文字列クラス。
+### WebString
+Chromium とのインターフェイス用に String と AtomicString を抽象化したもの。
+
 ## -webkit-appearance
 
 The -webkit-appearance CSS property is used in WebKit to display an element using a platform-native styling based on the operating system's theme.
