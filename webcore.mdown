@@ -1,10 +1,15 @@
 # WebCore Class Descriptions
 
-## RefPtr
+## PassRefPtr
 
 [RefPtr and PassRefPtr Basics](http://webkit.org/coding/RefPtr.html)
 
 PassRefPtr is used to reduce number of ref counting incrementing.
+
+PassRefPtr is recommended only be used for:
+- function argument
+- result types
+- copying arguments into RefPtr local variables
 
 ## Console
 
@@ -332,9 +337,11 @@ Data is stored in StringImpl.
 	    bool m_bufferIsInternal;
 	}
 
-## CString
+## StyleRareNonInheritedData < StyleRareNonInheritedData
 
-A container for a null-terminated char array supporting [copy-on-write](http://en.wikipedia.org/wiki/Copy-on-write) assignment.  The contained char array may be null.
+This struct is for rarely used non-inherited CSS3, CSS2, and WebKit-specific properties.
+By grouping them together, we save space, and only allocate this object when someone
+actually uses one of these properties.
 
 ## InputType
 
@@ -378,6 +385,10 @@ RenderTheme*** classes in WebCore/rendering are responsible for the look of cont
 
 In RenderThemeMac, we use the low-level NSCell API to draw the backgrounds and borders of form controls, but don't create real widgets.
 
+## adoptPtr
+
+TODO
+
 ## QualifiedName
 
 A smart hashed class that hold a prefix, a 
@@ -390,18 +401,33 @@ Added to support multiple nodes at the top level of a shadow. [Changeset 83256](
 ## 文字列クラスの違い
 
 ### StringImpl
+
 ごく普通の mutable UTF-16 文字列。 0-terminate されない。
+
 ### String
+
 StringImpl をラップしたもの。StringImpl を持たない null の状態がある。通常はこれを使う。
+
 ### CString
+
 0-terminated char string.  CString::data() returns a 0-terminated buffer.
+
+A container for a null-terminated char array supporting [copy-on-write](http://en.wikipedia.org/wiki/Copy-on-write) assignment.  The contained char array may be null.
+
 ### AtomicStringImpl
+
 StringImpl と同じ
+
 ### AtomicString
+
 Inmutable で、Java でいう intern 化された文字列。同じ内容なら内部で持つ AtomicStringImpl が共有されるので比較が速い。
+
 ### UString
+
 JavaScriptCore 用文字列クラス。
+
 ### WebString
+
 Chromium とのインターフェイス用に String と AtomicString を抽象化したもの。
 
 ## -webkit-appearance
@@ -640,6 +666,24 @@ WebCore uses a number of objects to represent a web page in memory. This documen
 
 Source: [[webkit-dev] newbie question](https://lists.webkit.org/pipermail/webkit-dev/2007-November/002752.html)
 
+## How "choose file" dialog works
+
+0. Each RenderFileUploadControl has its own FileChooser, m_fileChooser
+1. User clicks
+2. ...
+3. RenderFileUploadControl::click()
+4. Chrome::runOpenPanel(frame, fileChooser)
+5. ChromeClient::runOpenPanel(frame, fileChooser) - WebChromeClient inherits WebCore::ChromeClient
+6. Create WebOpenPanelResultListener. This contains fileChooser
+6. [[WebChromeClient.m_webView UIDelegate] webView:runOpenPanelForFileButtonWithResultListener:allowMultipleFiles]
+7. panel appears
+8. User chooses a file
+9. [NSSavePanel _didEndSheet:returnCode:contextInfo:]
+10. ??
+11. [WebOpenPanelResultListener chooseFilenames:]
+12. FileChooser::chooseFiles
+13. FileChooserClient::valueChanged - RenderFileUploadControl inherits FileChooserClient
+
 ## A guide to Assertion macros in WebKit
 
 [A guide to Assertion macros in WebKit](http://webkit.org/coding/assertion-guidelines.html)
@@ -659,3 +703,9 @@ This diagram illustrates how it happens, showing relationships between the objec
 [Re: [webkit-dev] Render path for &lt;select&gt; form controls; layout path for buttons](http://www.mail-archive.com/webkit-dev@lists.webkit.org/msg02844.html)
 
 (RenderMenuList + PopupMenu) or RenderListBox are the renderers for &lt;select&gt;
+
+## WebCore.order
+
+WebCore.order controls the symbol layout within the WebCore binary, and is only used with the Production configuration. 
+It's completely unrelated to the error you're seeing: references in WebCore.order to symbols that no longer exist are 
+silently ignored. The process for updating it is non-trivial and time-consuming, and is typically done by someone at Apple every few months.
