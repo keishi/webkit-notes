@@ -591,3 +591,9 @@ This diagram illustrates how it happens, showing relationships between the objec
 [Re: [webkit-dev] Render path for &lt;select&gt; form controls; layout path for buttons](http://www.mail-archive.com/webkit-dev@lists.webkit.org/msg02844.html)
 
 (RenderMenuList + PopupMenu) or RenderListBox are the renderers for &lt;select&gt;
+
+## Shadow Node
+
+[Shadow nodes in webkit](http://old.nabble.com/Shadow-nodes-in-webkit-td20142671.html)
+
+WebKit creates shadow nodes for many of the form controls.  As you noticed, these nodes are not visible from the DOM, but the renderers for those nodes can be traversed in the render tree.  For example, a text field or text area has a shadow DOM that contains all the text inside the control.  A file upload control has a shadow nodes for  the  "choose file" button.  This is just a way for WebKit to build elements using HTML without exposing the internal details to web content.
