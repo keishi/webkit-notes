@@ -1,10 +1,15 @@
 # WebCore Class Descriptions
 
-## RefPtr
+## PassRefPtr
 
 [RefPtr and PassRefPtr Basics](http://webkit.org/coding/RefPtr.html)
 
 PassRefPtr is used to reduce number of ref counting incrementing.
+
+PassRefPtr is recommended only be used for:
+- function argument
+- result types
+- copying arguments into RefPtr local variables
 
 ## Console
 
@@ -332,9 +337,98 @@ Data is stored in StringImpl.
 	    bool m_bufferIsInternal;
 	}
 
-## CString
+## StyleRareNonInheritedData < StyleRareNonInheritedData
+
+This struct is for rarely used non-inherited CSS3, CSS2, and WebKit-specific properties.
+By grouping them together, we save space, and only allocate this object when someone
+actually uses one of these properties.
+
+## InputType
+
+An InputType object represents the type-specific part of an HTMLInputElement.
+Do not expose instances of InputType and classes derived from it to classes
+other than HTMLInputElement.
+
+## RangeInputType < InputType
+
+(WebCore::RangeInputType::createRenderer): Returns a new RenderSlider.
+(WebCore::RangeInputType::createShadowSubtree): Creates SliderThumbElement and sets it as shadow root.
+
+## RenderSlider < RenderBlock
+
+- "slider-horizontal"      -> SliderHorizontalPart
+- "slider-vertical"        -> SliderVerticalPart
+- "sliderthumb-horizontal" -> SliderThumbHorizontalPart
+- "sliderthumb-vertical"   -> SliderThumbVerticalPart
+
+## SliderThumbElement < HTMLDivElement
+
+(WebCore::SliderThumbElement::shadowPseudoId): Returns "-webkit-slider-thumb"
+(WebCore::SliderThumbElement::createRenderer): Returns a new RenderSliderThumb.
+
+## RenderSliderThumb < RenderBlock
+
+(WebCore::RenderSliderThumb::layout): Set RenderStyle appearance based on the appearance of the parent
+
+## RenderTheme
+
+(WebCore::RenderTheme::adjustStyle): These will be overridden in RenderTheme* classes.
+(WebCore::RenderTheme::paint):
+(WebCore::RenderTheme::paintBorderOnly):
+(WebCore::RenderTheme::paintDecorations):
+
+## RenderTheme* Classes
+
+RenderTheme*** classes in WebCore/rendering are responsible for the look of controls. RenderThemeSafari and RenderThemeMac do the Aqua look. RenderThemeWin does a native Windows look.
+
+## RenderThemeMac
+
+In RenderThemeMac, we use the low-level NSCell API to draw the backgrounds and borders of form controls, but don't create real widgets.
+
+## adoptPtr
+
+TODO
+
+## QualifiedName
+
+A smart hashed class that hold a prefix, a 
+namespace URI and a localName all as atomic strings.
+
+## ShadowRoot < DocumentFragment
+
+Added to support multiple nodes at the top level of a shadow. [Changeset 83256](http://trac.webkit.org/changeset/83256)
+
+## 文字列クラスの違い
+
+### StringImpl
+
+ごく普通の mutable UTF-16 文字列。 0-terminate されない。
+
+### String
+
+StringImpl をラップしたもの。StringImpl を持たない null の状態がある。通常はこれを使う。
+
+### CString
+
+0-terminated char string.  CString::data() returns a 0-terminated buffer.
 
 A container for a null-terminated char array supporting [copy-on-write](http://en.wikipedia.org/wiki/Copy-on-write) assignment.  The contained char array may be null.
+
+### AtomicStringImpl
+
+StringImpl と同じ
+
+### AtomicString
+
+Inmutable で、Java でいう intern 化された文字列。同じ内容なら内部で持つ AtomicStringImpl が共有されるので比較が速い。
+
+### UString
+
+JavaScriptCore 用文字列クラス。
+
+### WebString
+
+Chromium とのインターフェイス用に String と AtomicString を抽象化したもの。
 
 ## -webkit-appearance
 
@@ -572,6 +666,24 @@ WebCore uses a number of objects to represent a web page in memory. This documen
 
 Source: [[webkit-dev] newbie question](https://lists.webkit.org/pipermail/webkit-dev/2007-November/002752.html)
 
+## How "choose file" dialog works
+
+0. Each RenderFileUploadControl has its own FileChooser, m_fileChooser
+1. User clicks
+2. ...
+3. RenderFileUploadControl::click()
+4. Chrome::runOpenPanel(frame, fileChooser)
+5. ChromeClient::runOpenPanel(frame, fileChooser) - WebChromeClient inherits WebCore::ChromeClient
+6. Create WebOpenPanelResultListener. This contains fileChooser
+6. [[WebChromeClient.m_webView UIDelegate] webView:runOpenPanelForFileButtonWithResultListener:allowMultipleFiles]
+7. panel appears
+8. User chooses a file
+9. [NSSavePanel _didEndSheet:returnCode:contextInfo:]
+10. ??
+11. [WebOpenPanelResultListener chooseFilenames:]
+12. FileChooser::chooseFiles
+13. FileChooserClient::valueChanged - RenderFileUploadControl inherits FileChooserClient
+
 ## A guide to Assertion macros in WebKit
 
 [A guide to Assertion macros in WebKit](http://webkit.org/coding/assertion-guidelines.html)
@@ -597,3 +709,9 @@ This diagram illustrates how it happens, showing relationships between the objec
 [Shadow nodes in webkit](http://old.nabble.com/Shadow-nodes-in-webkit-td20142671.html)
 
 WebKit creates shadow nodes for many of the form controls.  As you noticed, these nodes are not visible from the DOM, but the renderers for those nodes can be traversed in the render tree.  For example, a text field or text area has a shadow DOM that contains all the text inside the control.  A file upload control has a shadow nodes for  the  "choose file" button.  This is just a way for WebKit to build elements using HTML without exposing the internal details to web content.
+
+## WebCore.order
+
+WebCore.order controls the symbol layout within the WebCore binary, and is only used with the Production configuration. 
+It's completely unrelated to the error you're seeing: references in WebCore.order to symbols that no longer exist are 
+silently ignored. The process for updating it is non-trivial and time-consuming, and is typically done by someone at Apple every few months.
