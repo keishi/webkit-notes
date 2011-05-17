@@ -191,6 +191,10 @@ When a box has a horizontal or vertical scrollbar, it is placed in between the b
 
 ## RenderBoxModelObject < RenderObject
 
+## RenderInline < RenderBoxModelObject
+
+## RenderBlock < RenderBox
+
 ## RenderFlow
 
 Removed with Changeset 40378. Super class of RenderBlock and RenderInline.
@@ -657,6 +661,13 @@ WebCore uses a number of objects to represent a web page in memory. This documen
 	    +-------+           +--------+
 
 [1] After navigating to a new page, the old DOMWindow and old Document point to a null Frame, and the Frame points to a new DOMWindow and a new Document.
+
+## Page
+
+- Back/forward navigation (through BackForwardController)
+- View mode. Windowed/full screen/etc. (m_viewMode)
+- etc.
+
 
 ## How to print log output lines?
 
